@@ -43,6 +43,8 @@ const FormikForm = () => {
         // Form is inside Formik component as a render prop
         <form onSubmit={handleSubmit}>
 
+          <p>Formik, Yup Form</p>
+
           <div className="input-row">
             <label htmlFor="name">Name: </label>
             <input

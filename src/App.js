@@ -7,7 +7,8 @@ import FormikForm from './components/FormikForm'
 function App() {
   return (
     <>
-      {/* <VanillaForm /> */}
+      <VanillaForm />
+      <hr />
       <FormikForm />
     </>
   );
