@@ -1,4 +1,6 @@
-import React from 'react'
+import React, { useState } from 'react'
+import Autosuggest from 'react-autosuggest';
+import axios from 'axios'
 import { Formik } from 'formik'
 import  * as Yup from 'yup'
 import Error from './Error'
@@ -17,14 +19,21 @@ const validationSchema = Yup.object().shape({
   email: Yup.string()
     .email("Must be a valid email address")
     .max(255, "Must be shorter than 255")
-    .required("Must enter an email")
+    .required("Must enter an email"),
+  country: Yup.string()
+    .required("Must choose a country")
 })
 
 const FormikForm = () => {
+
+  const [country, setCountry] = useState("")
+  const [suggestions, setSuggestions] = useState([])
+
   return (
     <Formik initialValues={{
       name: "",
-      email: ""
+      email: "",
+      country: ""
     }}
     validationSchema={validationSchema}
     onSubmit={(values, { setSubmitting, resetForm }) => {
@@ -38,7 +47,16 @@ const FormikForm = () => {
       }, 500)
     }}
     >
-      {({ values, errors, touched, handleChange, handleBlur, handleSubmit, isSubmitting }) => (
+      {({
+        values,
+        errors,
+        touched,
+        handleChange,
+        handleBlur,
+        handleSubmit,
+        isSubmitting,
+        setFieldValue
+      }) => (
 
         // Form is inside Formik component as a render prop
         <form onSubmit={handleSubmit}>
@@ -73,6 +91,64 @@ const FormikForm = () => {
               className={touched.email && errors.email && "has-error"}
             />
             <Error touched={touched.email} message={errors.email} />
+          </div>
+
+          <div className="input-row">
+            <label htmlFor="country">Country</label>
+            <Autosuggest
+              inputProps={{
+                placeholder: "Type your country",
+                autoComplete: "abc",
+                name: "country",
+                id: "country",
+                value: country,
+                onChange: (_event, { newValue }) => {
+                  setCountry(newValue)
+                },
+                className: touched.country && errors.country && "has-error"
+              }}
+              suggestions={suggestions}
+              onSuggestionsFetchRequested={async ({value}) => {
+                if (!value) {
+                  setSuggestions([])
+                  return
+                }
+
+                try {
+                  const result = await axios.get(`https://restcountries.eu/rest/v2/name/${value}`)
+                  console.log(result.data)
+                  setSuggestions(result.data.map(row => ({
+                    name: row.name,
+                    flag: row.flag
+                  })))
+                } catch(e) {
+                  setSuggestions([])
+                }
+              }}
+              onSuggestionsClearRequested={() => {
+                setSuggestions([])
+              }}
+              onSuggestionSelected={(event, {suggestion, method}) => {
+                if (method === "enter") {
+                  // stops form submitting when hitting enter to select autosuggest option
+                  event.preventDefault()
+                }
+                setCountry(suggestion.name)
+                setFieldValue("country", suggestion.name) // hooks up the Autosuggest to Formik
+              }}
+              getSuggestionValue={suggestion => suggestion.name}
+              renderSuggestion={suggestion => (
+                <div>
+                  <img
+                    style={{width: '25px', paddingRight: '10px'}}
+                    src={suggestion.flag}
+                    alt={suggestion.name}
+                  />
+                  {suggestion.name}
+                </div>
+              )}
+            />
+            <Error touched={touched.country} message={errors.country} />
           </div>
 
           <div className="input-row">
